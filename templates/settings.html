@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}System Settings • GSM Assignment Alert System{% endblock %}
+
+{% block content %}
+
+    <div style="margin-bottom: 2rem;">
+        <h1 style="font-size: 1.8rem; font-weight: 700;">⚙️ System Configuration & Hardware Settings</h1>
+        <p style="color: var(--text-secondary); font-size: 0.95rem;">Manage Microsoft Azure App credentials, Telephony modes, and Daily reminder schedules.</p>
+    </div>
+
+    <div class="main-grid" style="grid-template-columns: 1fr 1fr;">
+        
+        <!-- Left: Azure App Registration & OAuth Status -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><span>🔐</span> Microsoft Azure App Config</h3>
+            </div>
+            
+            <div style="margin-bottom: 1.5rem; font-size: 0.9rem; color: var(--text-secondary);">
+                <p style="margin-bottom: 0.75rem;">
+                    <strong>Azure Client ID:</strong> 
+                    <code>{{ azure_client_id or 'Not Configured (Running in Mock / Offline Mode)' }}</code>
+                </p>
+                <p style="margin-bottom: 0.75rem;">
+                    <strong>Azure Tenant:</strong> 
+                    <code>{{ azure_tenant }}</code>
+                </p>
+                <p style="margin-bottom: 0.75rem;">
+                    <strong>OAuth Redirect URI:</strong> 
+                    <code style="color: var(--accent-cyan);">{{ redirect_uri }}</code>
+                </p>
+            </div>
+
+            <div style="background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: var(--radius-md); padding: 1rem; font-size: 0.85rem; color: var(--text-secondary);">
+                <h4 style="color: var(--accent-blue); margin-bottom: 0.5rem; font-size: 0.95rem;">📖 How to setup Azure App (Free):</h4>
+                <ol style="padding-left: 1.2rem; line-height: 1.5;">
+                    <li>Open <a href="https://portal.azure.com/#blade/Microsoft_AAD_RegisteredApps/ApplicationsListBlade" target="_blank" style="color: var(--accent-cyan);">Azure Portal App Registrations</a>.</li>
+                    <li>Click <strong>New registration</strong> -> Name it <em>"Assignment Alert System"</em>.</li>
+                    <li>Supported account types: <em>Accounts in any organizational directory and personal Microsoft accounts</em>.</li>
+                    <li>Redirect URI (Web): <code>{{ redirect_uri }}</code></li>
+                    <li>Copy Application (client) ID into your <code>.env</code> file.</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- Right: Telephony Hardware & Reminder Times -->
+        <div>
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><span>📱</span> Telephony & GSM Gateway</h3>
+                </div>
+                
+                <div style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1.5rem;">
+                    <p style="margin-bottom: 0.5rem;">
+                        <strong>Current Detection:</strong> 
+                        {% if is_termux %}
+                            <span class="badge badge-connected">Android Termux GSM Hardware (Active)</span>
+                        {% else %}
+                            <span class="badge" style="background: rgba(59, 130, 246, 0.15); color: var(--accent-blue);">Windows / PC Audio Simulator</span>
+                        {% endif %}
+                    </p>
+                    <p style="margin-top: 0.75rem;">
+                        When running on an Android device inside Termux, the server utilizes <code>termux-telephony-call</code> to place actual cellular calls via the phone's physical SIM card and <code>termux-tts-speak</code> to deliver the voice message.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Reminder Schedule Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><span>⏰</span> Daily Alert Schedule Rules</h3>
+                </div>
+
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Day Group</th>
+                                <th>Reminder Timestamps</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Weekdays (Mon - Fri)</strong></td>
+                                <td><code>11:01 AM, 06:00 PM, 08:45 PM</code></td>
+                                <td><span class="badge badge-connected">Active</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Weekends (Sat - Sun)</strong></td>
+                                <td><code>10:00 AM, 06:00 PM, 08:45 PM</code></td>
+                                <td><span class="badge badge-connected">Active</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+{% endblock %}
