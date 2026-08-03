@@ -221,6 +221,11 @@ def cache_user_assignments(user_id: int, assignments: List[Dict[str, Any]]):
     """Refreshes the assignments cache for a user."""
     with get_db_connection() as conn:
         cursor = conn.cursor()
+        cursor.execute("SELECT id FROM users WHERE id = ?", (user_id,))
+        if not cursor.fetchone():
+            # User doesn't exist yet, skip database caching
+            return
+
         # Clear existing cached tasks for this user
         cursor.execute("DELETE FROM assignments_cache WHERE user_id = ?", (user_id,))
         for item in assignments:
