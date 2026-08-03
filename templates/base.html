@@ -24,13 +24,32 @@
         </a>
 
         <div class="nav-links">
-            <a href="{{ url_for('index') }}" class="{% if request.endpoint == 'index' %}active{% endif %}">Dashboard</a>
-            <a href="{{ url_for('settings_view') }}" class="{% if request.endpoint == 'settings_view' %}active{% endif %}">Settings</a>
-            
+            {% if session.get('user_id') %}
+                {% if session.get('role') == 'admin' %}
+                    <a href="{{ url_for('admin_dashboard') }}" class="{% if request.endpoint == 'admin_dashboard' %}active{% endif %}">👑 Admin Console</a>
+                    <a href="{{ url_for('settings_view') }}" class="{% if request.endpoint == 'settings_view' %}active{% endif %}">⚙️ Settings</a>
+                {% else %}
+                    <a href="{{ url_for('student_dashboard') }}" class="{% if request.endpoint == 'student_dashboard' %}active{% endif %}">📊 My Dashboard</a>
+                {% endif %}
+
+                <!-- User Badge -->
+                <div class="status-badge" style="background: rgba(255, 255, 255, 0.06);">
+                    <span class="status-dot"></span>
+                    <span>{{ session.get('user_name', 'Logged In') }} ({{ session.get('role', 'user')|upper }})</span>
+                </div>
+
+                <a href="{{ url_for('auth_logout') }}" class="btn btn-sm btn-outline" style="border-color: rgba(239, 68, 68, 0.4); color: var(--accent-red);">
+                    🚪 Sign Out
+                </a>
+            {% else %}
+                <a href="{{ url_for('auth_view') }}" class="btn btn-sm btn-primary">
+                    🔑 Sign In / Register
+                </a>
+            {% endif %}
+
             <!-- Host Mode Badge -->
-            <div class="status-badge">
-                <span class="status-dot"></span>
-                <span>{% if is_termux %}Android Termux (GSM Active){% else %}PC Simulator Mode{% endif %}</span>
+            <div class="status-badge" title="Telephony Mode">
+                <span>{% if is_termux %}📱 Termux GSM{% else %}💻 PC Simulator{% endif %}</span>
             </div>
         </div>
     </header>

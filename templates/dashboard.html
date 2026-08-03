@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+
+{% block title %}My Portal • GSM Assignment Alert System{% endblock %}
+
+{% block content %}
+
+    <!-- Student Welcome & Alert Header -->
+    <div class="schedule-banner" style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9)); border-color: rgba(59, 130, 246, 0.3);">
+        <div>
+            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+                <h2 style="font-size: 1.4rem; font-weight: 700;">👋 Welcome, {{ current_user.name }}</h2>
+                <span class="badge {% if current_user.is_active %}badge-connected{% else %}badge-today{% endif %}">
+                    {% if current_user.is_active %}🟢 Alerts Active{% else %}⏸️ Alerts Paused{% endif %}
+                </span>
+            </div>
+            <p style="color: var(--text-secondary); font-size: 0.9rem;">
+                VIT Email: <strong style="color: var(--text-primary);">{{ current_user.email }}</strong> • 
+                SIM Target: <code style="color: var(--accent-cyan);">{{ current_user.phone_number }}</code> • 
+                Student ID: <code style="color: var(--text-muted);">{{ current_user.uuid }}</code>
+            </p>
+        </div>
+
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+            <button class="btn btn-primary btn-test-call" data-user-id="{{ current_user.id }}" data-user-name="{{ current_user.name }}" title="Make direct test call to my phone">
+                <span>📞</span> Test Call My Phone
+            </button>
+            <button class="btn btn-outline btn-toggle-user" data-user-id="{{ current_user.id }}">
+                {% if current_user.is_active %}⏸️ Pause Reminders{% else %}▶️ Resume Reminders{% endif %}
+            </button>
+        </div>
+    </div>
+
+    <!-- Student Main Grid -->
+    <div class="main-grid">
+        
+        <!-- Left Column: Microsoft Account & Reminder Schedules -->
+        <div>
+            <!-- Microsoft Integration Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><span>🔐</span> Microsoft 365 Account</h3>
+                </div>
+                
+                <div style="font-size: 0.9rem; color: var(--text-secondary);">
+                    {% if current_user.has_token %}
+                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+                            <span class="badge badge-connected">Connected & Syncing</span>
+                            <span style="font-weight: 600; color: var(--text-primary);">{{ current_user.account_email or current_user.email }}</span>
+                        </div>
+                        <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.4;">
+                            Your Microsoft Teams and To-Do assignments are automatically synced in the background to schedule your phone call reminders.
+                        </p>
+                    {% else %}
+                        <div style="margin-bottom: 1rem;">
+                            <span class="badge badge-today" style="margin-bottom: 0.5rem; display: inline-block;">Microsoft Account Not Connected</span>
+                            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+                                Please link your Microsoft student account so the system can read your assignment deadlines.
+                            </p>
+                            <a href="{{ url_for('connect_ms', user_id=current_user.id) }}" class="btn btn-primary" style="width: 100%;">
+                                <span>🔗</span> Connect Microsoft Account
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Daily Alert Schedule Times Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><span>⏰</span> Daily Call Schedule</h3>
+                </div>
+                <div style="font-size: 0.85rem; color: var(--text-secondary);">
+                    <p style="margin-bottom: 0.5rem;">The GSM server dials your phone at these fixed times whenever you have tasks due:</p>
+                    <div style="margin-bottom: 0.75rem;">
+                        <strong style="color: var(--text-primary); display: block; margin-bottom: 0.2rem;">Weekdays (Mon - Fri):</strong>
+                        <div style="display: flex; gap: 0.3rem;">
+                            <span class="time-pill">11:01 AM</span>
+                            <span class="time-pill">06:00 PM</span>
+                            <span class="time-pill">08:45 PM</span>
+                        </div>
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-primary); display: block; margin-bottom: 0.2rem;">Weekends (Sat - Sun):</strong>
+                        <div style="display: flex; gap: 0.3rem;">
+                            <span class="time-pill">10:00 AM</span>
+                            <span class="time-pill">06:00 PM</span>
+                            <span class="time-pill">08:45 PM</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Delete Account & Data Privacy Card -->
+            <div class="card" style="border: 1px solid rgba(239, 68, 68, 0.2);">
+                <div class="card-header">
+                    <h3 class="card-title" style="color: var(--accent-red);"><span>🗑️</span> Account & Data Privacy</h3>
+                </div>
+                <div style="font-size: 0.85rem; color: var(--text-secondary);">
+                    <p style="margin-bottom: 1rem;">
+                        If you wish to remove your phone number, Microsoft tokens, and all cached data from the system:
+                    </p>
+                    <button class="btn btn-danger btn-delete-user" data-user-id="{{ current_user.id }}" data-user-name="{{ current_user.name }}" style="width: 100%;">
+                        Delete My Account & Wipe Data
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: My Personal Assignments -->
+        <div>
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><span>📋</span> My Upcoming Assignments & Deadlines</h3>
+                </div>
+
+                {% if assignments_summary %}
+                    <div>
+                        <!-- Due Today Section -->
+                        {% if assignments_summary.due_today %}
+                            <div style="margin-bottom: 1.5rem;">
+                                <h4 style="font-size: 0.9rem; color: var(--accent-red); margin-bottom: 0.5rem; text-transform: uppercase; font-weight: 700;">
+                                    🚨 Due Today (Immediate Call Priority)
+                                </h4>
+                                {% for item in assignments_summary.due_today %}
+                                    <div class="task-item">
+                                        <div>
+                                            <div class="task-title">{{ item.title }}</div>
+                                            <div class="task-subject">{{ item.subject }}</div>
+                                        </div>
+                                        <span class="badge badge-today">Due Today</span>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        <!-- Due Tomorrow Section -->
+                        {% if assignments_summary.due_tomorrow %}
+                            <div style="margin-bottom: 1.5rem;">
+                                <h4 style="font-size: 0.9rem; color: var(--accent-amber); margin-bottom: 0.5rem; text-transform: uppercase; font-weight: 700;">
+                                    ⚠️ Due Tomorrow
+                                </h4>
+                                {% for item in assignments_summary.due_tomorrow %}
+                                    <div class="task-item">
+                                        <div>
+                                            <div class="task-title">{{ item.title }}</div>
+                                            <div class="task-subject">{{ item.subject }}</div>
+                                        </div>
+                                        <span class="badge badge-tomorrow">Due Tomorrow</span>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        {% if not assignments_summary.due_today and not assignments_summary.due_tomorrow %}
+                            <div style="text-align: center; padding: 2.5rem 1rem; color: var(--text-muted);">
+                                <div style="font-size: 2rem; margin-bottom: 0.5rem;">🎉</div>
+                                <h4 style="color: var(--text-primary); font-size: 1.1rem; margin-bottom: 0.25rem;">All Caught Up!</h4>
+                                <p style="font-size: 0.85rem;">You have no urgent assignments due today or tomorrow. Enjoy your day!</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <div style="text-align: center; padding: 2.5rem 1rem; color: var(--text-muted);">
+                        <p>No assignments loaded yet. Link your Microsoft account on the left.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Student Call Logs -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title"><span>📜</span> My Call History & Voice Alert Transcripts</h3>
+            <span style="font-size: 0.85rem; color: var(--text-muted);">Recent Calls</span>
+        </div>
+
+        {% if call_logs %}
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date & Time</th>
+                            <th>Trigger Type</th>
+                            <th>Tasks Due</th>
+                            <th>Voice Alert Spoken By Server</th>
+                            <th>Call Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in call_logs %}
+                            <tr>
+                                <td style="white-space: nowrap; color: var(--text-secondary);">{{ log.timestamp }}</td>
+                                <td>
+                                    {% if log.trigger_type == 'scheduled' %}
+                                        <span class="badge badge-connected">Scheduled Daily</span>
+                                    {% else %}
+                                        <span class="badge badge-pending">Manual Test</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span style="color: var(--accent-red); font-weight: 600;">{{ log.tasks_due_today }} Today</span> • 
+                                    <span style="color: var(--accent-amber); font-weight: 600;">{{ log.tasks_due_tomorrow }} Tomorrow</span>
+                                </td>
+                                <td style="max-width: 400px; font-size: 0.85rem; color: var(--text-secondary);">
+                                    "{{ log.message_spoken }}"
+                                </td>
+                                <td>
+                                    {% if 'SUCCESS' in log.status %}
+                                        <span class="badge badge-connected">SUCCESS</span>
+                                    {% elif 'SIMULATED' in log.status %}
+                                        <span class="badge" style="background: rgba(59, 130, 246, 0.15); color: var(--accent-blue);">SIMULATED</span>
+                                    {% else %}
+                                        <span class="badge badge-today">{{ log.status }}</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                <p>No phone calls have been made to your number yet. Click <strong>"Test Call My Phone"</strong> above to test!</p>
+            </div>
+        {% endif %}
+    </div>
+
+{% endblock %}
