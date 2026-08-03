@@ -93,8 +93,8 @@ def dial_and_speak(
     else:
         # PC Development / Simulator Mode
         print("\n" + "=" * 60)
-        print(f"📞 [GSM CALL SIMULATOR] Dialing SIM -> {phone_number} ({user_name})")
-        print(f"🔊 [VOICE ALERT TTS] \"{message}\"")
+        print(f"[GSM CALL SIMULATOR] Dialing SIM -> {phone_number} ({user_name})")
+        print(f"[VOICE ALERT TTS] \"{message}\"")
         print("=" * 60 + "\n")
 
         # Play audio locally so the developer can hear the exact alert
