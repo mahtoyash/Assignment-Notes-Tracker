@@ -1,0 +1,295 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard • GSM Assignment Alert System{% endblock %}
+
+{% block content %}
+
+    <!-- Top Schedule & Status Banner -->
+    <div class="schedule-banner">
+        <div>
+            <h2 style="font-size: 1.3rem; font-weight: 700; margin-bottom: 0.25rem;">⏰ Automated Alert Engine Active</h2>
+            <p style="color: var(--text-secondary); font-size: 0.9rem;">Next Scheduled Batch Call: <strong style="color: var(--accent-cyan);">{{ scheduler_status.next_run_time }}</strong></p>
+            
+            <div class="schedule-times">
+                <div>
+                    <span style="font-size: 0.8rem; color: var(--text-muted); display: block;">Weekdays (Mon-Fri)</span>
+                    <div style="display: flex; gap: 0.4rem; margin-top: 0.2rem;">
+                        {% for s in weekday_schedule %}
+                            <span class="time-pill">{{ s.label }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div>
+                    <span style="font-size: 0.8rem; color: var(--text-muted); display: block;">Weekends (Sat-Sun)</span>
+                    <div style="display: flex; gap: 0.4rem; margin-top: 0.2rem;">
+                        {% for s in weekend_schedule %}
+                            <span class="time-pill">{{ s.label }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <button id="btn-batch-alert" class="btn btn-primary" title="Immediately dials GSM calls to all active students with pending tasks">
+                <span>🚀</span> Trigger Batch Alert Now
+            </button>
+        </div>
+    </div>
+
+    <!-- Quick Stats Grid -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon blue">👥</div>
+            <div class="stat-details">
+                <h3>{{ stats.total_users }}</h3>
+                <p>Registered Students</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon green">⚡</div>
+            <div class="stat-details">
+                <h3>{{ stats.active_users }}</h3>
+                <p>Active Alert Receivers</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon purple">📞</div>
+            <div class="stat-details">
+                <h3>{{ stats.total_calls }}</h3>
+                <p>Total Calls Made</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon amber">📋</div>
+            <div class="stat-details">
+                <h3>{{ stats.total_assignments }}</h3>
+                <p>Pending Assignments</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Workspace Grid -->
+    <div class="main-grid">
+        
+        <!-- Left Column: Student Registration Form -->
+        <div>
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><span>➕</span> Register Student</h3>
+                </div>
+                
+                <form action="{{ url_for('register_student') }}" method="POST">
+                    <div class="form-group">
+                        <label class="form-label" for="name">Student Name</label>
+                        <input type="text" id="name" name="name" class="form-control" placeholder="e.g. Yash Mahto" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="phone_number">Mobile Phone Number (SIM Target)</label>
+                        <input type="tel" id="phone_number" name="phone_number" class="form-control" placeholder="e.g. +919876543210" required>
+                        <small style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.3rem; display: block;">
+                            Enter standard 10-digit number or with country code.
+                        </small>
+                    </div>
+
+                    <div style="margin-top: 1.5rem;">
+                        <button type="submit" class="btn btn-primary" style="width: 100%;">
+                            <span>💾</span> Save & Connect Microsoft Account
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Host System Info Card -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><span>🖥️</span> Gateway Host Info</h3>
+                </div>
+                <div style="font-size: 0.9rem; color: var(--text-secondary);">
+                    <p style="margin-bottom: 0.5rem;"><strong>Host Platform:</strong> {% if is_termux %}Android Termux (GSM Hardware Call Enabled){% else %}Windows / PC (Audio Simulator Mode){% endif %}</p>
+                    <p style="margin-bottom: 0.5rem;"><strong>Microsoft OAuth:</strong> {% if azure_configured %}<span class="badge badge-connected">Azure Configured</span>{% else %}<span class="badge badge-today">Mock / Offline Mode</span>{% endif %}</p>
+                    <p style="margin-bottom: 0.5rem;"><strong>Local Server IP:</strong> <code style="background: rgba(0,0,0,0.4); padding: 0.2rem 0.5rem; border-radius: 4px;">{{ host_ip }}:{{ port }}</code></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Registered Students & Live Assignments -->
+        <div>
+            <!-- Registered Students List -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><span>👥</span> Registered Students ({{ users|length }})</h3>
+                </div>
+
+                {% if users %}
+                    <div>
+                        {% for u in users %}
+                            <div class="user-item">
+                                <div class="user-info">
+                                    <div class="user-avatar">{{ u.name[0]|upper }}</div>
+                                    <div class="user-meta">
+                                        <h4>{{ u.name }}</h4>
+                                        <p>{{ u.phone_number }} • 
+                                            {% if u.has_token %}
+                                                <span class="badge badge-connected">MS Connected ({{ u.account_email or 'Active' }})</span>
+                                            {% else %}
+                                                <span class="badge badge-pending">Token Missing</span>
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div class="user-actions">
+                                    {% if not u.has_token %}
+                                        <a href="{{ url_for('connect_ms', user_id=u.id) }}" class="btn btn-sm btn-outline" style="border-color: var(--accent-cyan); color: var(--accent-cyan);">
+                                            Connect MS
+                                        </a>
+                                    {% endif %}
+
+                                    <button class="btn btn-sm btn-outline btn-test-call" data-user-id="{{ u.id }}" data-user-name="{{ u.name }}" title="Make direct GSM test call">
+                                        📞 Test Call
+                                    </button>
+
+                                    <button class="btn btn-sm btn-outline btn-toggle-user" data-user-id="{{ u.id }}" title="Toggle Active / Paused">
+                                        {% if u.is_active %}🟢 Active{% else %}⏸️ Paused{% endif %}
+                                    </button>
+
+                                    <button class="btn btn-sm btn-danger btn-delete-user" data-user-id="{{ u.id }}" data-user-name="{{ u.name }}" title="Delete Student">
+                                        🗑️
+                                    </button>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div style="text-align: center; padding: 2.5rem 1rem; color: var(--text-muted);">
+                        <p style="font-size: 1.1rem; margin-bottom: 0.5rem;">No students registered yet.</p>
+                        <p style="font-size: 0.85rem;">Use the form on the left to register a student and link their Microsoft account.</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Active Assignments Preview -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title"><span>📋</span> Pending Deadlines Overview</h3>
+                </div>
+
+                {% if assignments_summary %}
+                    <div>
+                        <!-- Due Today Section -->
+                        {% if assignments_summary.due_today %}
+                            <div style="margin-bottom: 1.25rem;">
+                                <h4 style="font-size: 0.9rem; color: var(--accent-red); margin-bottom: 0.5rem; text-transform: uppercase; font-weight: 700;">
+                                    🚨 Due Today (Immediate Call Priority)
+                                </h4>
+                                {% for item in assignments_summary.due_today %}
+                                    <div class="task-item">
+                                        <div>
+                                            <div class="task-title">{{ item.title }}</div>
+                                            <div class="task-subject">{{ item.subject }}</div>
+                                        </div>
+                                        <span class="badge badge-today">Due Today</span>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        <!-- Due Tomorrow Section -->
+                        {% if assignments_summary.due_tomorrow %}
+                            <div style="margin-bottom: 1.25rem;">
+                                <h4 style="font-size: 0.9rem; color: var(--accent-amber); margin-bottom: 0.5rem; text-transform: uppercase; font-weight: 700;">
+                                    ⚠️ Due Tomorrow
+                                </h4>
+                                {% for item in assignments_summary.due_tomorrow %}
+                                    <div class="task-item">
+                                        <div>
+                                            <div class="task-title">{{ item.title }}</div>
+                                            <div class="task-subject">{{ item.subject }}</div>
+                                        </div>
+                                        <span class="badge badge-tomorrow">Due Tomorrow</span>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        {% if not assignments_summary.due_today and not assignments_summary.due_tomorrow %}
+                            <div style="text-align: center; padding: 1.5rem; color: var(--text-muted);">
+                                <span>🎉 No urgent assignments due today or tomorrow!</span>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <div style="text-align: center; padding: 1.5rem; color: var(--text-muted);">
+                        <span>Connect a Microsoft account to load assignments automatically.</span>
+                    </div>
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Call Logs & Telephony Console -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title"><span>📜</span> Recent GSM Call History & Voice Transcripts</h3>
+            <span style="font-size: 0.85rem; color: var(--text-muted);">Last 50 Calls</span>
+        </div>
+
+        {% if call_logs %}
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Student</th>
+                            <th>Phone Number</th>
+                            <th>Trigger</th>
+                            <th>Tasks Due</th>
+                            <th>Voice Alert Message Spoken</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in call_logs %}
+                            <tr>
+                                <td style="white-space: nowrap; color: var(--text-secondary);">{{ log.timestamp }}</td>
+                                <td style="font-weight: 600;">{{ log.user_name or 'Unknown' }}</td>
+                                <td><code>{{ log.phone_number }}</code></td>
+                                <td>
+                                    {% if log.trigger_type == 'scheduled' %}
+                                        <span class="badge badge-connected">Scheduled</span>
+                                    {% else %}
+                                        <span class="badge badge-pending">Manual Test</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span style="color: var(--accent-red); font-weight: 600;">{{ log.tasks_due_today }} Today</span> • 
+                                    <span style="color: var(--accent-amber); font-weight: 600;">{{ log.tasks_due_tomorrow }} Tomorrow</span>
+                                </td>
+                                <td style="max-width: 350px; font-size: 0.85rem; color: var(--text-secondary);">
+                                    "{{ log.message_spoken }}"
+                                </td>
+                                <td>
+                                    {% if 'SUCCESS' in log.status %}
+                                        <span class="badge badge-connected">SUCCESS</span>
+                                    {% elif 'SIMULATED' in log.status %}
+                                        <span class="badge" style="background: rgba(59, 130, 246, 0.15); color: var(--accent-blue);">SIMULATED</span>
+                                    {% else %}
+                                        <span class="badge badge-today">{{ log.status }}</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                <p>No phone calls made yet. Click "Test Call" or "Trigger Batch Alert Now" above to initiate your first call!</p>
+            </div>
+        {% endif %}
+    </div>
+
+{% endblock %}
