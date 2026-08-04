@@ -63,13 +63,40 @@ def dial_and_speak(
 ) -> Dict[str, Any]:
     """
     Executes a GSM telephone call and reads out the voice alert message.
+    - If Twilio credentials exist: Uses Twilio Cloud Voice API (0 popups, auto-hangup).
     - On Android / Termux: Uses `termux-telephony-call` and `termux-tts-speak`.
     - On PC / Windows: Simulates the call in console and uses desktop TTS.
     """
     logger.info(f"Initiating alert call to {user_name} ({phone_number}) | Trigger: {trigger_type}")
+    
+    use_twilio = config.is_twilio_enabled() or config.TELEPHONY_PROVIDER == "twilio"
     is_termux = config.is_termux_environment()
 
-    if is_termux:
+    if use_twilio:
+        try:
+            from twilio.rest import Client
+            from twilio.twiml.voice_response import VoiceResponse
+
+            logger.info(f"Executing Twilio Voice Call to {phone_number} from {config.TWILIO_PHONE_NUMBER}")
+            client = Client(config.TWILIO_ACCOUNT_SID, config.TWILIO_AUTH_TOKEN)
+            
+            # Construct TwiML: Speaks message and immediately hangs up when done
+            response = VoiceResponse()
+            response.say(message, voice='Polly.Aditi', language='en-IN')
+            response.hangup()
+
+            call = client.calls.create(
+                twiml=str(response),
+                to=phone_number,
+                from_=config.TWILIO_PHONE_NUMBER
+            )
+            logger.info(f"Twilio Call successfully dispatched. Call SID: {call.sid}")
+            status = f"TWILIO_SUCCESS ({call.sid[:12]})"
+        except Exception as e:
+            logger.error(f"Twilio Telephony execution error: {e}")
+            status = f"TWILIO_FAILED: {str(e)[:50]}"
+
+    elif is_termux:
         try:
             # 1. Dial phone number via Termux Telephony API
             logger.info(f"Executing Termux GSM call: termux-telephony-call {phone_number}")
@@ -100,6 +127,7 @@ def dial_and_speak(
         # Play audio locally so the developer can hear the exact alert
         speak_desktop_tts(message)
         status = "SIMULATED"
+
 
     # Record log in SQLite database
     log_id = database.log_call(
