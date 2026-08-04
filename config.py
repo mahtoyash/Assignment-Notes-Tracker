@@ -54,8 +54,17 @@ WEEKEND_SCHEDULE = [
     {"hour": 20, "minute": 45, "label": "08:45 PM"}
 ]
 
-# Telephony Mode Detection
-# Check if running inside Android Termux with termux-telephony-call available
+# Telephony Provider & Twilio Config
+TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID", "")
+TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN", "")
+TWILIO_PHONE_NUMBER = os.getenv("TWILIO_PHONE_NUMBER", "")
+TELEPHONY_PROVIDER = os.getenv("TELEPHONY_PROVIDER", "auto").lower()
+
+def is_twilio_enabled() -> bool:
+    """Returns True if Twilio credentials are fully configured."""
+    return bool(TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN and TWILIO_PHONE_NUMBER)
+
+# Telephony Mode Detection for Termux
 def is_termux_environment() -> bool:
     mode = os.getenv("TELEPHONY_MODE", "auto").lower()
     if mode == "termux":
@@ -69,3 +78,4 @@ def is_termux_environment() -> bool:
     return is_android_termux and has_termux_call
 
 ENABLE_MOCK_DATA = os.getenv("ENABLE_MOCK_DATA", "false").lower() in ("true", "1", "yes")
+
