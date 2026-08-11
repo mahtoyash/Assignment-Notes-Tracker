@@ -67,7 +67,15 @@ def dial_and_speak(
     - On Android / Termux: Uses `termux-telephony-call` and `termux-tts-speak`.
     - On PC / Windows: Simulates the call in console and uses desktop TTS.
     """
-    logger.info(f"Initiating alert call to {user_name} ({phone_number}) | Trigger: {trigger_type}")
+    # Normalize phone number to E.164 format (+91 for 10-digit Indian numbers if missing prefix)
+    target_phone = phone_number.strip().replace(" ", "").replace("-", "")
+    if not target_phone.startswith("+"):
+        if len(target_phone) == 10:
+            target_phone = "+91" + target_phone
+        elif len(target_phone) == 11 and target_phone.startswith("0"):
+            target_phone = "+91" + target_phone[1:]
+
+    logger.info(f"Initiating alert call to {user_name} ({target_phone}) | Trigger: {trigger_type}")
     
     use_twilio = config.is_twilio_enabled() or config.TELEPHONY_PROVIDER == "twilio"
     is_termux = config.is_termux_environment()
@@ -77,7 +85,7 @@ def dial_and_speak(
             from twilio.rest import Client
             from twilio.twiml.voice_response import VoiceResponse
 
-            logger.info(f"Executing Twilio Voice Call to {phone_number} from {config.TWILIO_PHONE_NUMBER}")
+            logger.info(f"Executing Twilio Voice Call to {target_phone} from {config.TWILIO_PHONE_NUMBER}")
             client = Client(config.TWILIO_ACCOUNT_SID, config.TWILIO_AUTH_TOKEN)
             
             # Construct TwiML: Speaks message and immediately hangs up when done
@@ -87,14 +95,14 @@ def dial_and_speak(
 
             call = client.calls.create(
                 twiml=str(response),
-                to=phone_number,
+                to=target_phone,
                 from_=config.TWILIO_PHONE_NUMBER
             )
             logger.info(f"Twilio Call successfully dispatched. Call SID: {call.sid}")
             status = f"TWILIO_SUCCESS ({call.sid[:12]})"
         except Exception as e:
             logger.error(f"Twilio Telephony execution error: {e}")
-            status = f"TWILIO_FAILED: {str(e)[:50]}"
+            status = f"TWILIO_FAILED: {str(e)}"
 
     elif is_termux:
         try:
