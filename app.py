@@ -395,9 +395,13 @@ def api_test_call(user_id: int):
         tasks_due_tomorrow=len(due_tomorrow)
     )
 
+    status_str = result.get("status", "")
+    is_success = "SUCCESS" in status_str or "SIMULATED" in status_str
+
     return jsonify({
-        "success": True,
-        "status": result["status"],
+        "success": is_success,
+        "status": status_str,
+        "error": status_str if not is_success else None,
         "message": message,
         "phone_number": user["phone_number"]
     })
