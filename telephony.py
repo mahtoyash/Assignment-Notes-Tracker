@@ -85,6 +85,9 @@ def dial_and_speak(
             from twilio.rest import Client
             from twilio.twiml.voice_response import VoiceResponse
 
+            import re
+            import urllib.parse
+
             logger.info(f"Executing Twilio Voice Call to {target_phone} from {config.TWILIO_PHONE_NUMBER}")
             client = Client(config.TWILIO_ACCOUNT_SID, config.TWILIO_AUTH_TOKEN)
             
@@ -93,16 +96,21 @@ def dial_and_speak(
             response.say(message, voice='Polly.Aditi', language='en-IN')
             response.hangup()
 
+            twiml_str = str(response)
+            twiml_url = "https://twimlets.com/echo?Twiml=" + urllib.parse.quote(twiml_str)
+
             call = client.calls.create(
-                twiml=str(response),
+                url=twiml_url,
                 to=target_phone,
                 from_=config.TWILIO_PHONE_NUMBER
             )
             logger.info(f"Twilio Call successfully dispatched. Call SID: {call.sid}")
             status = f"TWILIO_SUCCESS ({call.sid[:12]})"
         except Exception as e:
-            logger.error(f"Twilio Telephony execution error: {e}")
-            status = f"TWILIO_FAILED: {str(e)}"
+            raw_err = getattr(e, 'msg', str(e))
+            clean_err = re.sub(r'\x1b\[[0-9;]*[a-zA-Z]', '', raw_err).strip()
+            logger.error(f"Twilio Telephony execution error: {clean_err}")
+            status = f"TWILIO_FAILED: {clean_err}"
 
     elif is_termux:
         try:
