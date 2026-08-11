@@ -19,7 +19,13 @@ pkg install -y python git termux-api openssl libffi rust build-essential python-
 echo "[3/5] Acquiring Termux wake-lock (prevents CPU sleep)..."
 termux-wake-lock
 
-# 4. Install Python Dependencies
+# 4. Ensure .env file exists
+if [ ! -f .env ]; then
+    echo "📋 Creating .env file from .env.example..."
+    cp .env.example .env
+fi
+
+# 5. Install Python Dependencies
 echo "[4/5] Installing Python requirements..."
 pip install --upgrade pip
 pip install -r requirements.txt
