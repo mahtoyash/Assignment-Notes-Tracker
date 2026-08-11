@@ -4,7 +4,9 @@ Handles GSM phone dialing and Text-to-Speech playback via Termux API on Android,
 with an automatic desktop simulator (pyttsx3) for development & testing on PC.
 """
 
+import re
 import time
+import urllib.parse
 import subprocess
 import logging
 from typing import Dict, Any, List, Optional
@@ -84,9 +86,6 @@ def dial_and_speak(
         try:
             from twilio.rest import Client
             from twilio.twiml.voice_response import VoiceResponse
-
-            import re
-            import urllib.parse
 
             logger.info(f"Executing Twilio Voice Call to {target_phone} from {config.TWILIO_PHONE_NUMBER}")
             client = Client(config.TWILIO_ACCOUNT_SID, config.TWILIO_AUTH_TOKEN)
