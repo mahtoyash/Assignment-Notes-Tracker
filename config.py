@@ -57,7 +57,7 @@ WEEKEND_SCHEDULE = [
 # Telephony Provider & Twilio Config
 TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID", "")
 TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN", "")
-TWILIO_PHONE_NUMBER = os.getenv("TWILIO_PHONE_NUMBER", "")
+TWILIO_PHONE_NUMBER = os.getenv("TWILIO_PHONE_NUMBER", "+17372212163")
 TELEPHONY_PROVIDER = os.getenv("TELEPHONY_PROVIDER", "auto").lower()
 
 def is_twilio_enabled() -> bool:
