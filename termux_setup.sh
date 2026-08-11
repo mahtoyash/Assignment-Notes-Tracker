@@ -13,7 +13,7 @@ pkg update -y && pkg upgrade -y
 
 # 2. Install Python, Termux API & Git
 echo "[2/5] Installing Python, Git, and Termux API..."
-pkg install -y python git termux-api
+pkg install -y python git termux-api openssl libffi rust build-essential python-cryptography
 
 # 3. Request Wake-Lock to keep server running 24/7 in background
 echo "[3/5] Acquiring Termux wake-lock (prevents CPU sleep)..."
