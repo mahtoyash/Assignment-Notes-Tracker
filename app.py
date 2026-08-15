@@ -447,6 +447,14 @@ def api_delete_user(user_id: int):
     return jsonify({"success": True})
 
 
+@app.route("/exotel/voice", methods=["GET", "POST"])
+def exotel_voice():
+    """ExoML webhook endpoint that serves Text-to-Speech XML instructions to Exotel."""
+    message = request.args.get("message") or request.form.get("CustomField") or "Alert: You have pending assignment deadlines. Please check your dashboard."
+    xml_content = f'<?xml version="1.0" encoding="UTF-8"?><Response><Say voice="female" language="en-IN">{message}</Say><Hangup/></Response>'
+    return app.response_class(xml_content, mimetype='text/xml')
+
+
 @app.route("/api/status")
 def api_status():
     """Returns server health, scheduler info, and stats."""

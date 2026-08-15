@@ -62,6 +62,7 @@ EXOTEL_ACCOUNT_SID = os.getenv("EXOTEL_ACCOUNT_SID", "")
 EXOTEL_API_KEY = os.getenv("EXOTEL_API_KEY", "")
 EXOTEL_API_TOKEN = os.getenv("EXOTEL_API_TOKEN", "")
 EXOTEL_CALLER_ID = os.getenv("EXOTEL_CALLER_ID", "")
+EXOTEL_FLOW_URL = os.getenv("EXOTEL_FLOW_URL", "")
 
 def is_exotel_enabled() -> bool:
     """Returns True if Exotel credentials are fully configured."""

@@ -95,12 +95,13 @@ def dial_and_speak(
             
             # Construct XML response for Exotel Text-to-Speech playback with auto-hangup
             xml_content = f'<Response><Say voice="female" language="en-IN">{message}</Say><Hangup/></Response>'
-            twiml_url = "https://twimlets.com/echo?Twiml=" + urllib.parse.quote(xml_content)
+            twiml_url = config.EXOTEL_FLOW_URL if config.EXOTEL_FLOW_URL else ("https://twimlets.com/echo?Twiml=" + urllib.parse.quote(xml_content))
 
             payload = {
                 "From": exotel_target,
                 "CallerId": config.EXOTEL_CALLER_ID,
-                "Url": twiml_url
+                "Url": twiml_url,
+                "CustomField": message
             }
             
             res = requests.post(
