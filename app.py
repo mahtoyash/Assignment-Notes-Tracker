@@ -459,12 +459,12 @@ def api_status():
 if __name__ == "__main__":
     print(f"""
     ================================================================
-    📞 GSM Assignment Alert System Server Running!
+    GSM Assignment Alert System Server Running!
     ----------------------------------------------------------------
-    • Local URL:      http://127.0.0.1:{config.PORT}
-    • Network URL:    http://{get_local_ip()}:{config.PORT}
-    • Admin Login:    admin@sys.tem  /  admin123
-    • Telephony Mode: {'Android Termux (GSM SIM)' if config.is_termux_environment() else 'PC Audio Simulator'}
+    * Local URL:      http://127.0.0.1:{config.PORT}
+    * Network URL:    http://{get_local_ip()}:{config.PORT}
+    * Admin Login:    admin@sys.tem  /  admin123
+    * Telephony Mode: {'Android Termux (GSM SIM)' if config.is_termux_environment() else 'PC Audio Simulator'}
     ================================================================
     """)
     app.run(host=config.HOST, port=config.PORT, debug=config.DEBUG)
