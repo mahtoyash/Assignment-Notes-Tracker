@@ -110,9 +110,26 @@ def dial_and_speak(
             raw_err = getattr(e, 'msg', str(e))
             clean_err = re.sub(r'\x1b\[[0-9;]*[a-zA-Z]', '', raw_err).strip()
             if "verified recipient" in clean_err.lower() or "trial phone number" in clean_err.lower():
-                clean_err = f"Unverified Twilio Recipient: {target_phone} must be added to Verified Caller IDs in Twilio Console."
+                clean_err = f"Unverified Recipient: Add {target_phone} to Verified Caller IDs in Twilio Console."
+            elif "upgrade" in clean_err.lower() or "permission" in clean_err.lower() or "geo" in clean_err.lower():
+                clean_err = f"Twilio Trial Restriction: International calls to {target_phone} require upgrading Twilio account or using Android Termux SIM mode."
+            
             logger.error(f"Twilio Telephony execution error: {clean_err}")
-            status = f"TWILIO_FAILED: {clean_err}"
+
+            # Fallback to Termux SIM or Desktop Simulator if Twilio fails
+            if is_termux:
+                logger.info("Falling back to Android Termux GSM SIM call...")
+                try:
+                    subprocess.run(["termux-telephony-call", phone_number], check=True, timeout=10)
+                    time.sleep(7)
+                    subprocess.run(["termux-tts-speak", "-r", "0.9", message], check=True, timeout=30)
+                    status = f"TERMUX_FALLBACK ({clean_err[:40]})"
+                except Exception as te:
+                    status = f"TWILIO_FAILED: {clean_err}"
+            else:
+                logger.info("Falling back to Desktop PC TTS Simulator...")
+                speak_desktop_tts(message)
+                status = f"SIMULATED_FALLBACK ({clean_err[:40]})"
 
     elif is_termux:
         try:
