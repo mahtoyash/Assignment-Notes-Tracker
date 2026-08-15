@@ -368,12 +368,14 @@ def oauth_callback():
 # ----------------------------------------------------------------------
 
 @app.route("/api/users/<int:user_id>/call", methods=["POST"])
-@login_required
 def api_test_call(user_id: int):
     """Triggers an immediate GSM call and voice alert for a student."""
+    if "user_id" not in session:
+        return jsonify({"success": False, "error": "Please sign in to your student account first."}), 401
+
     # Authorization: Students can only call themselves, Admin can call anyone
     if session.get("role") != "admin" and session.get("user_id") != user_id:
-        return jsonify({"success": False, "error": "Unauthorized"}), 403
+        return jsonify({"success": False, "error": "Unauthorized action."}), 403
 
     user = database.get_user_by_id(user_id)
     if not user:
