@@ -20,7 +20,7 @@ _scheduler: Optional[BackgroundScheduler] = None
 
 def scheduled_alert_job():
     """Scheduled task executed at fixed daily intervals to alert all students."""
-    logger.info("⏰ Scheduled Alert Job triggered! Initiating GSM batch call queue...")
+    logger.info("Scheduled Alert Job triggered! Initiating GSM batch call queue...")
     try:
         results = telephony.process_batch_alert_queue(trigger_type="scheduled")
         logger.info(f"Scheduled alert job completed. {len(results)} call(s) dispatched.")
@@ -77,7 +77,7 @@ def start_scheduler():
     scheduler = init_scheduler()
     if not scheduler.running:
         scheduler.start()
-        logger.info("🚀 APScheduler background alert engine started successfully.")
+        logger.info("APScheduler background alert engine started successfully.")
 
 
 def stop_scheduler():

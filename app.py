@@ -191,7 +191,7 @@ def auth_register():
             expires_at=9999999999.0
         )
         ms_graph.get_mock_assignments(user_id)
-        flash(f"🎉 Welcome to Assignment Alert System, {name}! Your portal is ready.", "success")
+        flash(f"Welcome to Assignment Alert System, {name}! Your portal is ready.", "success")
         return redirect(url_for("student_dashboard"))
 
     # Live Microsoft OAuth 2.0 Flow
@@ -353,7 +353,7 @@ def oauth_callback():
                 expires_at=expires_at
             )
             ms_graph.fetch_pending_assignments(user_id)
-            flash("✅ Microsoft Account successfully connected! Alert system is active.", "success")
+            flash("Microsoft Account successfully connected! Alert system is active.", "success")
         else:
             flash("Microsoft login completed, but user session was lost.", "error")
     else:
