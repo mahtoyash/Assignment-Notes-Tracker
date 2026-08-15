@@ -98,6 +98,7 @@ def dial_and_speak(
             twiml_str = str(response)
             twiml_url = "https://twimlets.com/echo?Twiml=" + urllib.parse.quote(twiml_str)
 
+            # Use url parameter for TwiML execution (required for Twilio Trial Accounts)
             call = client.calls.create(
                 url=twiml_url,
                 to=target_phone,
@@ -108,6 +109,8 @@ def dial_and_speak(
         except Exception as e:
             raw_err = getattr(e, 'msg', str(e))
             clean_err = re.sub(r'\x1b\[[0-9;]*[a-zA-Z]', '', raw_err).strip()
+            if "verified recipient" in clean_err.lower() or "trial phone number" in clean_err.lower():
+                clean_err = f"Unverified Twilio Recipient: {target_phone} must be added to Verified Caller IDs in Twilio Console."
             logger.error(f"Twilio Telephony execution error: {clean_err}")
             status = f"TWILIO_FAILED: {clean_err}"
 
