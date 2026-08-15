@@ -86,12 +86,17 @@ def dial_and_speak(
     if use_exotel:
         try:
             import requests
-            logger.info(f"Executing Exotel Voice Call to {target_phone} via ExoPhone {config.EXOTEL_CALLER_ID}")
+            # Format phone number for Exotel India API (e.g. 09404612708)
+            exotel_target = target_phone.replace("+91", "0").replace("+", "")
+            if not exotel_target.startswith("0") and len(exotel_target) == 10:
+                exotel_target = "0" + exotel_target
+
+            logger.info(f"Executing Exotel Voice Call to {exotel_target} via ExoPhone {config.EXOTEL_CALLER_ID}")
             url = f"https://api.exotel.com/v1/Accounts/{config.EXOTEL_ACCOUNT_SID}/Calls/connect.json"
             
             payload = {
-                "From": target_phone,
-                "To": target_phone,
+                "From": exotel_target,
+                "To": exotel_target,
                 "CallerId": config.EXOTEL_CALLER_ID,
                 "CallType": "trans",
                 "CustomField": message
