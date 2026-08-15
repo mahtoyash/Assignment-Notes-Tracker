@@ -54,21 +54,14 @@ WEEKEND_SCHEDULE = [
     {"hour": 20, "minute": 45, "label": "08:45 PM"}
 ]
 
-# Telephony Provider & Twilio / Exotel Config
-TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID", "")
-TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN", "")
-TWILIO_PHONE_NUMBER = os.getenv("TWILIO_PHONE_NUMBER", "+17372212163")
-TELEPHONY_PROVIDER = os.getenv("TELEPHONY_PROVIDER", "auto").lower()
+# Telephony Provider & Exotel Config
+TELEPHONY_PROVIDER = os.getenv("TELEPHONY_PROVIDER", "exotel").lower()
 
 # Exotel India Config
 EXOTEL_ACCOUNT_SID = os.getenv("EXOTEL_ACCOUNT_SID", "")
 EXOTEL_API_KEY = os.getenv("EXOTEL_API_KEY", "")
 EXOTEL_API_TOKEN = os.getenv("EXOTEL_API_TOKEN", "")
 EXOTEL_CALLER_ID = os.getenv("EXOTEL_CALLER_ID", "")
-
-def is_twilio_enabled() -> bool:
-    """Returns True if Twilio credentials are fully configured."""
-    return bool(TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN and TWILIO_PHONE_NUMBER)
 
 def is_exotel_enabled() -> bool:
     """Returns True if Exotel credentials are fully configured."""
