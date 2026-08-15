@@ -93,16 +93,14 @@ def dial_and_speak(
             logger.info(f"Executing Exotel Voice Call to {exotel_target} via ExoPhone {config.EXOTEL_CALLER_ID}")
             url = f"https://api.exotel.com/v1/Accounts/{config.EXOTEL_ACCOUNT_SID}/Calls/connect.json"
             
-            # Construct XML response for Exotel Text-to-Speech playback with auto-hangup
-            xml_content = f'<Response><Say voice="female" language="en-IN">{message}</Say><Hangup/></Response>'
-            twiml_url = config.EXOTEL_FLOW_URL if config.EXOTEL_FLOW_URL else ("https://twimlets.com/echo?Twiml=" + urllib.parse.quote(xml_content))
-
             payload = {
                 "From": exotel_target,
+                "To": exotel_target,
                 "CallerId": config.EXOTEL_CALLER_ID,
-                "Url": twiml_url,
                 "CustomField": message
             }
+            if config.EXOTEL_FLOW_URL:
+                payload["Url"] = config.EXOTEL_FLOW_URL
             
             res = requests.post(
                 url,
