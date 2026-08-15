@@ -79,10 +79,45 @@ def dial_and_speak(
 
     logger.info(f"Initiating alert call to {user_name} ({target_phone}) | Trigger: {trigger_type}")
     
-    use_twilio = config.is_twilio_enabled() or config.TELEPHONY_PROVIDER == "twilio"
+    use_exotel = config.is_exotel_enabled() or config.TELEPHONY_PROVIDER == "exotel"
+    use_twilio = (config.is_twilio_enabled() or config.TELEPHONY_PROVIDER == "twilio") and not use_exotel
     is_termux = config.is_termux_environment()
 
-    if use_twilio:
+    if use_exotel:
+        try:
+            import requests
+            logger.info(f"Executing Exotel Voice Call to {target_phone} via ExoPhone {config.EXOTEL_CALLER_ID}")
+            url = f"https://api.exotel.com/v1/Accounts/{config.EXOTEL_ACCOUNT_SID}/Calls/connect.json"
+            
+            payload = {
+                "From": target_phone,
+                "To": target_phone,
+                "CallerId": config.EXOTEL_CALLER_ID,
+                "CallType": "trans",
+                "CustomField": message
+            }
+            
+            res = requests.post(
+                url,
+                data=payload,
+                auth=(config.EXOTEL_API_KEY, config.EXOTEL_API_TOKEN),
+                timeout=15
+            )
+            res_data = res.json()
+            
+            if res.status_code in (200, 201) and "Call" in res_data:
+                call_sid = res_data["Call"].get("Sid", "EXOTEL_CALL")
+                logger.info(f"Exotel Call successfully dispatched. Call SID: {call_sid}")
+                status = f"EXOTEL_SUCCESS ({call_sid[:12]})"
+            else:
+                err_msg = res_data.get("RestException", {}).get("Message", res.text)
+                logger.error(f"Exotel Telephony execution error: {err_msg}")
+                status = f"EXOTEL_FAILED: {err_msg[:60]}"
+        except Exception as e:
+            logger.error(f"Exotel Telephony execution error: {e}")
+            status = f"EXOTEL_FAILED: {str(e)[:60]}"
+
+    elif use_twilio:
         try:
             from twilio.rest import Client
             from twilio.twiml.voice_response import VoiceResponse
