@@ -170,6 +170,8 @@ def register_user(
             conn.commit()
             return cursor.lastrowid, None
         except sqlite3.IntegrityError as e:
+            if "phone_number" in str(e):
+                return None, "An account with this phone number already exists. Please Sign In."
             return None, f"Registration error: {str(e)}"
 
 
