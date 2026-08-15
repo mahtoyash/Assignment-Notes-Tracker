@@ -93,12 +93,14 @@ def dial_and_speak(
             logger.info(f"Executing Exotel Voice Call to {exotel_target} via ExoPhone {config.EXOTEL_CALLER_ID}")
             url = f"https://api.exotel.com/v1/Accounts/{config.EXOTEL_ACCOUNT_SID}/Calls/connect.json"
             
+            # Construct XML response for Exotel Text-to-Speech playback
+            xml_content = f"<Response><Say>{message}</Say></Response>"
+            twiml_url = "https://twimlets.com/echo?Twiml=" + urllib.parse.quote(xml_content)
+
             payload = {
                 "From": exotel_target,
-                "To": exotel_target,
                 "CallerId": config.EXOTEL_CALLER_ID,
-                "CallType": "trans",
-                "CustomField": message
+                "Url": twiml_url
             }
             
             res = requests.post(
