@@ -96,15 +96,16 @@ def dial_and_speak(
             logger.info(f"Executing Exotel Voice Call to {exotel_target} via ExoPhone {config.EXOTEL_CALLER_ID}")
             url = f"https://api.exotel.com/v1/Accounts/{config.EXOTEL_ACCOUNT_SID}/Calls/connect.json"
             
+            # One-legged IVR call: From=customer, Url=ExoML webhook
+            # Do NOT include "To" — that would make Exotel bridge the call to
+            # a second phone (causing ring-inside-call noise with no voice)
             payload = {
                 "From": exotel_target,
-                "To": config.EXOTEL_CALLER_ID,
                 "CallerId": config.EXOTEL_CALLER_ID,
+                "Url": config.EXOTEL_FLOW_URL,
                 "CallType": "trans",
                 "CustomField": message
             }
-            if config.EXOTEL_FLOW_URL:
-                payload["Url"] = config.EXOTEL_FLOW_URL
 
             res = requests.post(
                 url,
