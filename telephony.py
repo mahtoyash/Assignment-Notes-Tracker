@@ -64,12 +64,12 @@ def dial_and_speak(
     tasks_due_tomorrow: int = 0
 ) -> Dict[str, Any]:
     """
-    Executes a GSM telephone call and reads out the voice alert message.
-    - If Twilio credentials exist: Uses Twilio Cloud Voice API (0 popups, auto-hangup).
+    Executes a telephone call and reads out the voice alert message.
+    - If Exotel credentials exist: Uses Exotel India Cloud Voice API.
     - On Android / Termux: Uses `termux-telephony-call` and `termux-tts-speak`.
     - On PC / Windows: Simulates the call in console and uses desktop TTS.
     """
-    # Normalize phone number to E.164 format (+91 for 10-digit Indian numbers if missing prefix)
+    # Normalize phone number to E.164 / Indian standard format
     target_phone = phone_number.strip().replace(" ", "").replace("-", "")
     if not target_phone.startswith("+"):
         if len(target_phone) == 10:
@@ -79,44 +79,13 @@ def dial_and_speak(
 
     logger.info(f"Initiating alert call to {user_name} ({target_phone}) | Trigger: {trigger_type}")
     
-    use_twilio = config.is_twilio_enabled() or config.TELEPHONY_PROVIDER == "twilio"
     use_exotel = config.is_exotel_enabled() or config.TELEPHONY_PROVIDER == "exotel"
     is_termux = config.is_termux_environment()
 
-    if use_twilio:
+    if use_exotel:
         try:
             import requests
-            url = f"https://api.twilio.com/2010-04-01/Accounts/{config.TWILIO_ACCOUNT_SID}/Calls.json"
-            twiml_content = f"<Response><Say voice=\"alice\">{message}</Say></Response>"
-            payload = {
-                "To": target_phone,
-                "From": config.TWILIO_PHONE_NUMBER,
-                "Twiml": twiml_content
-            }
-            logger.info(f"Executing Twilio Cloud Voice Call to {target_phone} via {config.TWILIO_PHONE_NUMBER}")
-            res = requests.post(
-                url,
-                data=payload,
-                auth=(config.TWILIO_ACCOUNT_SID, config.TWILIO_AUTH_TOKEN),
-                timeout=15
-            )
-            res_data = res.json()
-            if res.status_code in (200, 201) and "sid" in res_data:
-                call_sid = res_data["sid"]
-                logger.info(f"Twilio Call successfully dispatched. Call SID: {call_sid}")
-                status = f"TWILIO_SUCCESS ({call_sid[:12]})"
-            else:
-                err_msg = res_data.get("message", res.text)
-                logger.error(f"Twilio Telephony execution error: {err_msg}")
-                status = f"TWILIO_FAILED: {err_msg[:60]}"
-        except Exception as e:
-            logger.error(f"Twilio Telephony execution error: {e}")
-            status = f"TWILIO_FAILED: {str(e)[:60]}"
-
-    elif use_exotel:
-        try:
-            import requests
-            # Format phone number for Exotel India API (e.g. 09404612708)
+            # Format phone number for Exotel India API (e.g. 09404612708 or 9404612708)
             exotel_target = target_phone.replace("+91", "0").replace("+", "")
             if not exotel_target.startswith("0") and len(exotel_target) == 10:
                 exotel_target = "0" + exotel_target
@@ -126,13 +95,13 @@ def dial_and_speak(
             
             payload = {
                 "From": exotel_target,
-                "To": exotel_target,
                 "CallerId": config.EXOTEL_CALLER_ID,
+                "CallType": "trans",
                 "CustomField": message
             }
             if config.EXOTEL_FLOW_URL:
                 payload["Url"] = config.EXOTEL_FLOW_URL
-            
+
             res = requests.post(
                 url,
                 data=payload,
