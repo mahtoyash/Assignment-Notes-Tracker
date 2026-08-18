@@ -79,8 +79,11 @@ def dial_and_speak(
 
     logger.info(f"Initiating alert call to {user_name} ({target_phone}) | Trigger: {trigger_type}")
     
-    use_exotel = config.is_exotel_enabled() or config.TELEPHONY_PROVIDER == "exotel"
+    use_exotel = config.is_exotel_enabled()
     is_termux = config.is_termux_environment()
+
+    if config.TELEPHONY_PROVIDER == "exotel" and not use_exotel:
+        logger.warning("TELEPHONY_PROVIDER is set to 'exotel', but Exotel credentials (EXOTEL_ACCOUNT_SID, EXOTEL_API_KEY, EXOTEL_API_TOKEN, EXOTEL_CALLER_ID) are missing in .env. Falling back to local simulator mode.")
 
     if use_exotel:
         try:
