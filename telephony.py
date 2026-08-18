@@ -98,14 +98,13 @@ def dial_and_speak(
             
             payload = {
                 "From": exotel_target,
+                "To": config.EXOTEL_CALLER_ID,
                 "CallerId": config.EXOTEL_CALLER_ID,
                 "CallType": "trans",
                 "CustomField": message
             }
             if config.EXOTEL_FLOW_URL:
                 payload["Url"] = config.EXOTEL_FLOW_URL
-            else:
-                payload["To"] = config.EXOTEL_CALLER_ID
 
             res = requests.post(
                 url,
