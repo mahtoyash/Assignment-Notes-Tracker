@@ -79,10 +79,41 @@ def dial_and_speak(
 
     logger.info(f"Initiating alert call to {user_name} ({target_phone}) | Trigger: {trigger_type}")
     
+    use_twilio = config.is_twilio_enabled() or config.TELEPHONY_PROVIDER == "twilio"
     use_exotel = config.is_exotel_enabled() or config.TELEPHONY_PROVIDER == "exotel"
     is_termux = config.is_termux_environment()
 
-    if use_exotel:
+    if use_twilio:
+        try:
+            import requests
+            url = f"https://api.twilio.com/2010-04-01/Accounts/{config.TWILIO_ACCOUNT_SID}/Calls.json"
+            twiml_content = f"<Response><Say voice=\"alice\">{message}</Say></Response>"
+            payload = {
+                "To": target_phone,
+                "From": config.TWILIO_PHONE_NUMBER,
+                "Twiml": twiml_content
+            }
+            logger.info(f"Executing Twilio Cloud Voice Call to {target_phone} via {config.TWILIO_PHONE_NUMBER}")
+            res = requests.post(
+                url,
+                data=payload,
+                auth=(config.TWILIO_ACCOUNT_SID, config.TWILIO_AUTH_TOKEN),
+                timeout=15
+            )
+            res_data = res.json()
+            if res.status_code in (200, 201) and "sid" in res_data:
+                call_sid = res_data["sid"]
+                logger.info(f"Twilio Call successfully dispatched. Call SID: {call_sid}")
+                status = f"TWILIO_SUCCESS ({call_sid[:12]})"
+            else:
+                err_msg = res_data.get("message", res.text)
+                logger.error(f"Twilio Telephony execution error: {err_msg}")
+                status = f"TWILIO_FAILED: {err_msg[:60]}"
+        except Exception as e:
+            logger.error(f"Twilio Telephony execution error: {e}")
+            status = f"TWILIO_FAILED: {str(e)[:60]}"
+
+    elif use_exotel:
         try:
             import requests
             # Format phone number for Exotel India API (e.g. 09404612708)
