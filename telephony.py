@@ -98,6 +98,7 @@ def dial_and_speak(
             
             payload = {
                 "From": exotel_target,
+                "To": config.EXOTEL_CALLER_ID,
                 "CallerId": config.EXOTEL_CALLER_ID,
                 "CallType": "trans",
                 "CustomField": message
